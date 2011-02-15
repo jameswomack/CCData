@@ -1,6 +1,5 @@
 //
 //  SQLiteAccess.h
-//  IceSlide
 //
 //  Created by Bill Dudney on 3/11/08.
 //  Copyright 2008 Gala Factory. All rights reserved.
@@ -23,5 +22,6 @@
 + (void)deleteWithSQL:(NSString *)sql;
 + (NSString *)pathToDB;
 + (NSArray *)searchResultsForTerm:(NSString *)s;
++ (void)createTableWithName:(NSString *)name andColumns:(NSArray *)columns;
 
 @end

@@ -1,10 +1,12 @@
 //
 //  SQLiteAccess.m
-//  Pocket Constitution
 //
 //  Created by Bill Dudney on 3/11/08.
 //  Copyright 2008 Gala Factory. All rights reserved.
 //
+
+#define DB_NAME @"Your DB Name"
+#define DB_EXT @"Your DB Extension"
 
 #import "SQLiteAccess.h"
 #import <sqlite3.h>
@@ -34,8 +36,8 @@ static int multipleRowCallback(void *queryValuesVP, int columnCount, char **valu
 }
 
 + (NSString *)pathToDB {
-	NSString *dbName = @"pocket-constitution";
-    NSString *originalDBPath = [[NSBundle mainBundle] pathForResource:dbName ofType:@"db"];
+	NSString *dbName = DB_NAME;
+    NSString *originalDBPath = [[NSBundle mainBundle] pathForResource:dbName ofType:DB_EXT];
     NSString *path = nil;
     NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
     NSString *appSupportDir = [paths objectAtIndex:0];
@@ -60,7 +62,6 @@ static int multipleRowCallback(void *queryValuesVP, int columnCount, char **valu
     } else if(!dirExists) {
         NSError *error = nil;
 		NSError *error2 = nil;
-        //BOOL success = [fileManager createDirectoryAtPath:dbNameDir attributes:nil];
 		BOOL success = [fileManager createDirectoryAtPath:dbNameDir withIntermediateDirectories:YES attributes:nil error:&error2];
         if(!success) {
             NSLog(@"failed to create dir");
@@ -75,6 +76,23 @@ static int multipleRowCallback(void *queryValuesVP, int columnCount, char **valu
     return path;
 }
 
+
++ (void)createTableWithName:(NSString *)name andColumns:(NSArray *)columns; {
+	NSMutableString *m = [[[NSMutableString alloc] init] autorelease];
+	[m appendString:@"CREATE TABLE IF NOT EXISTS "];
+	[m appendString:name];
+	[m appendString:@" ("];
+	for (NSDictionary *d in columns) {
+		[m appendString:[d objectForKey:@"name"]];
+		[m appendString:@""];
+		[m appendString:[d objectForKey:@"attributes"]];
+	}
+	[m appendString:@")"];
+	[self executeSQL:[NSString stringWithFormat:@"%@",m] withCallback:NULL context:nil];
+}
+
+
+
 + (NSNumber *)executeSQL:(NSString *)sql withCallback:(void *)callbackFunction context:(id)contextObject {
     NSString *path = [self pathToDB];
     sqlite3 *db = NULL;
@@ -85,7 +103,7 @@ static int multipleRowCallback(void *queryValuesVP, int columnCount, char **valu
         NSLog(@"Can't open database: %s\n", sqlite3_errmsg(db));
         sqlite3_close(db);
         return nil;
-    } else {
+    }else {
         char *zErrMsg = NULL;
         NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
         rc = sqlite3_exec(db, [sql UTF8String], callbackFunction, (void*)contextObject, &zErrMsg);
@@ -115,7 +133,6 @@ static int multipleRowCallback(void *queryValuesVP, int columnCount, char **valu
 }
 
 + (NSArray *)selectManyValuesWithSQL:(NSString *)sql {
-	//DLog(@"selectManyValuesWithSQL");
     NSMutableArray *queryValues = [NSMutableArray array];
     [self executeSQL:sql withCallback:multipleRowCallback context:queryValues];
     NSMutableArray *values = [NSMutableArray array];

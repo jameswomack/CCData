@@ -1,6 +1,5 @@
 //
 //  CCData.h
-//  Pocket Constitution
 //
 //  Created by James on 3/20/10.
 //  Copyright 2010 Cirrostratus Design Company. All rights reserved.
@@ -18,6 +17,8 @@
 - (NSArray *)dataForTable:(NSString *)t where:(NSString *)w equals:(NSString *)e;
 
 - (id)dataForTable:(NSString *)t where:(NSString *)w equals:(NSString *)e limitOne:(BOOL)limit;
+
+- (id)dataForTable:(NSString *)t where:(NSString *)w equals:(NSString *)e isInt:(BOOL)b limitOne:(BOOL)limit;
 
 - (NSArray *)dataForTable:(NSString *)t where:(NSString *)w matches:(NSString *)e;
 

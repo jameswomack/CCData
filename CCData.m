@@ -1,6 +1,5 @@
 //
 //  CCData.m
-//  Pocket Constitution
 //
 //  Created by James on 3/20/10.
 //  Copyright 2010 Cirrostratus Design Company. All rights reserved.
@@ -31,6 +30,19 @@
 	}
 	return [SQLiteAccess selectManyRowsWithSQL:sql];
 }
+
+- (id)dataForTable:(NSString *)t where:(NSString *)w equals:(NSString *)e isInt:(BOOL)b limitOne:(BOOL)limit; {
+	if(!b){
+		return [self dataForTable:t where:w equals:e];
+	}
+	NSString *sql = [NSString stringWithFormat:@"SELECT * FROM %@ WHERE %@ = %i", t, w, [e intValue]];
+	DLog(@"%@",sql);
+	if (limit) {
+		return [SQLiteAccess selectOneRowWithSQL:sql];
+	}
+	return [SQLiteAccess selectManyRowsWithSQL:sql];
+}
+
 
 - (NSArray *)dataForTable:(NSString *)t where:(NSString *)w matches:(NSString *)e {
 	NSString *sql = [NSString stringWithFormat:@"SELECT * FROM %@ WHERE %@ MATCH '%@'", t, w, e];
