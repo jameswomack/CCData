@@ -23,5 +23,6 @@
 + (NSString *)pathToDB;
 + (NSArray *)searchResultsForTerm:(NSString *)s;
 + (void)createTableWithName:(NSString *)name andColumns:(NSArray *)columns;
++ (void)mergeMainDatabaseWithDatabase:(NSString *)databasePath;
 
 @end

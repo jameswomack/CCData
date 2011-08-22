@@ -1,5 +1,6 @@
 //
 //  CCData.h
+//  Pocket Constitution
 //
 //  Created by James on 3/20/10.
 //  Copyright 2010 Cirrostratus Design Company. All rights reserved.
@@ -13,6 +14,10 @@
 }
 
 - (NSArray *)dataForTable:(NSString *)t;
+
+- (NSArray *)dataForTable:(NSString *)t params:(NSDictionary *)d;
+
+- (id)dataForTable:(NSString *)t params:(NSDictionary *)d limitOne:(BOOL)limit;
 
 - (NSArray *)dataForTable:(NSString *)t where:(NSString *)w equals:(NSString *)e;
 
@@ -29,9 +34,11 @@
 
 - (void)deleteRowInTable:(NSString *)t byID:(NSInteger)i;
 
-- (NSNumber *)insertRow:(NSMutableDictionary *)r inTable:(NSString *)t;
+- (void)deleteRowInTable:(NSString *)t byID:(NSInteger)i idColumnName:(NSString *)n;
 
-- (void)updateRow:(NSMutableDictionary *)r byID:(NSInteger)i inTable:(NSString *)t;
+- (NSNumber *)insertRow:(NSDictionary *)r inTable:(NSString *)t;
+
+- (void)updateRow:(NSDictionary *)r byID:(NSInteger)i inTable:(NSString *)t;
 
 - (NSString *)arrayOfDictionariesToCSV:(NSArray *)arrayOfDictionaries;
 

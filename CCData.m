@@ -1,5 +1,6 @@
 //
 //  CCData.m
+//  Pocket Constitution
 //
 //  Created by James on 3/20/10.
 //  Copyright 2010 Cirrostratus Design Company. All rights reserved.
@@ -20,6 +21,25 @@
 	NSString *sql = [NSString stringWithFormat:@"SELECT * FROM %@ WHERE %@ = '%@'", t, w, e];
 	DLog(@"%@",sql);
 	return [SQLiteAccess selectManyRowsWithSQL:sql];
+}
+
+- (NSArray *)dataForTable:(NSString *)t params:(NSDictionary *)d; {
+	return [self dataForTable:t params:d limitOne:NO];
+}
+
+- (id)dataForTable:(NSString *)t params:(NSDictionary *)d limitOne:(BOOL)limit {
+    NSMutableString *sql = [[NSMutableString alloc] initWithString:@"SELECT * FROM "];
+    [sql appendFormat:@"%@ WHERE ",t];
+    for (int i = 0; i<[[d allKeys] count]; i++) {
+        [sql appendFormat:@"`%@` = '%@' ",[[d allKeys] objectAtIndex:i], [[d allValues] objectAtIndex:i]];
+        if ([[d allKeys] count] > i+1) {
+            [sql appendString:@"AND "];
+        }
+    }
+	if (limit) {
+		return [SQLiteAccess selectOneRowWithSQL:[sql autorelease]];
+	}
+	return [SQLiteAccess selectManyRowsWithSQL:[sql autorelease]];
 }
 
 
@@ -66,11 +86,15 @@
 }
 
 - (void)deleteRowInTable:(NSString *)t byID:(NSInteger)i {
-	NSString *sql = [NSString stringWithFormat:@"DELETE FROM %@ WHERE id = '%i'", t, i];
+	return [self deleteRowInTable:t byID:i idColumnName:@"id"];
+}
+
+- (void)deleteRowInTable:(NSString *)t byID:(NSInteger)i idColumnName:(NSString *)n; {
+	NSString *sql = [NSString stringWithFormat:@"DELETE FROM %@ WHERE %@ = '%i'", t, n, i];
 	return [SQLiteAccess deleteWithSQL:sql];
 }
 
-- (NSNumber *)insertRow:(NSMutableDictionary *)r inTable:(NSString *)t {
+- (NSNumber *)insertRow:(NSDictionary *)r inTable:(NSString *)t {
 	DLog(@"insertRow");
 	NSMutableString *mutable_sql = [[[NSMutableString alloc] initWithString:@""] autorelease];
 	[mutable_sql appendString:[NSString stringWithFormat:@"INSERT INTO %@ (",t]];
@@ -80,14 +104,20 @@
 	mutable_sql = [NSMutableString stringWithString:[mutable_sql substringToIndex:[mutable_sql length] - 1]];
 	[mutable_sql appendString:@") VALUES ("];
 	for (id theKey in r){
-		[mutable_sql appendString:[NSString stringWithFormat:@"'%@',",[r objectForKey:theKey]]];
+		NSString *s;
+		if ([r objectForKey:theKey] != [NSNull null]) {
+			s = [[r objectForKey:theKey] stringByReplacingOccurrencesOfString:@"\"" withString:@"'"];
+			[mutable_sql appendString:[NSString stringWithFormat:@"\"%@\",",s]];
+		}else {
+			[mutable_sql appendString:[NSString stringWithFormat:@"\"%@\",",[r objectForKey:theKey]]];
+		}		
 	}
 	mutable_sql = [NSMutableString stringWithString:[mutable_sql substringToIndex:[mutable_sql length] - 1]];
 	[mutable_sql appendString:@")"];
 	return [SQLiteAccess insertWithSQL:[NSString stringWithString:mutable_sql]];
 }
 
-- (void)updateRow:(NSMutableDictionary *)r byID:(NSInteger)i inTable:(NSString *)t {
+- (void)updateRow:(NSDictionary *)r byID:(NSInteger)i inTable:(NSString *)t {
 	NSMutableString *mutable_sql = [[[NSMutableString alloc] initWithString:@""] autorelease];
 	[mutable_sql appendString:[NSString stringWithFormat:@"UPDATE %@ SET ",t]];
 	for (id theKey in r){

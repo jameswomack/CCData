@@ -5,8 +5,8 @@
 //  Copyright 2008 Gala Factory. All rights reserved.
 //
 
-#define DB_NAME @"Your DB Name"
-#define DB_EXT @"Your DB Extension"
+#define DB_NAME @"Notify"
+#define DB_EXT @"db"
 
 #import "SQLiteAccess.h"
 #import <sqlite3.h>
@@ -41,11 +41,11 @@ static int multipleRowCallback(void *queryValuesVP, int columnCount, char **valu
     NSString *path = nil;
     NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
     NSString *appSupportDir = [paths objectAtIndex:0];
-    NSString *dbNameDir = [NSString stringWithFormat:@"%@/data", appSupportDir];
+    NSString *dbNameDir = [NSString stringWithFormat:@"%@/sql", appSupportDir];
     NSFileManager *fileManager = [NSFileManager defaultManager];
     BOOL isDir = NO;
     BOOL dirExists = [fileManager fileExistsAtPath:dbNameDir isDirectory:&isDir];
-    NSString *dbPath = [NSString stringWithFormat:@"%@/%@.db", dbNameDir, dbName];
+    NSString *dbPath = [NSString stringWithFormat:@"%@/%@.%@", dbNameDir, dbName, DB_EXT];
     if(dirExists && isDir) {
         BOOL dbExists = [fileManager fileExistsAtPath:dbPath];
         if(!dbExists) {
@@ -74,6 +74,19 @@ static int multipleRowCallback(void *queryValuesVP, int columnCount, char **valu
         }
     }
     return path;
+}
+
+
++ (void)mergeMainDatabaseWithDatabase:(NSString *)databasePath; {
+    BOOL dbExists = [[NSFileManager defaultManager] fileExistsAtPath:databasePath];
+	if (!dbExists) {
+		ILogPlus(@"This database doesn't exist");
+		return;
+	}else {
+		ILogPlus(@"%@",[self executeSQL:[NSString stringWithFormat:@"ATTACH '%@' AS dbl_db",databasePath] withCallback:NULL context:nil]);
+		[self executeSQL:[NSString stringWithFormat:@"insert into main.favorites select * from dbl_db.favorites",databasePath] withCallback:NULL context:nil];
+		[self executeSQL:[NSString stringWithFormat:@"insert into main.meals select * from dbl_db.meals",databasePath] withCallback:NULL context:nil];
+	}
 }
 
 
@@ -165,7 +178,6 @@ static int multipleRowCallback(void *queryValuesVP, int columnCount, char **valu
 	NSString *path = [self pathToDB];
     sqlite3 *db = NULL;
     int rc = SQLITE_OK;
-    NSInteger lastRowId = 0;
     rc = sqlite3_open([path UTF8String], &db);
     if(SQLITE_OK != rc) {
         NSLog(@"Can't open database: %s\n", sqlite3_errmsg(db));
@@ -188,7 +200,7 @@ static int multipleRowCallback(void *queryValuesVP, int columnCount, char **valu
             NSLog(@"Can't run query '%@' error message: %s\n", sql, sqlite3_errmsg(db));
             sqlite3_free(zErrMsg);
         }
-        lastRowId = sqlite3_last_insert_rowid(db);
+        sqlite3_last_insert_rowid(db);
         sqlite3_close(db);
         [pool release];
     }
