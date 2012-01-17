@@ -23,6 +23,8 @@
 
 - (NSArray *)dataForTable:(NSString *)t where:(NSString *)w equals:(NSString *)e;
 
+- (NSArray *)dataForTable:(NSString *)t where:(NSString *)w isNot:(NSString *)e;
+
 - (id)dataForTable:(NSString *)t where:(NSString *)w equals:(NSString *)e limitOne:(BOOL)limit;
 
 - (id)dataForTable:(NSString *)t where:(NSString *)w equals:(NSString *)e isInt:(BOOL)b limitOne:(BOOL)limit;

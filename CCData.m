@@ -75,6 +75,13 @@
 	return [[SQLiteAccess sql] selectManyRowsWithSQL:sql];
 }
 
+- (NSArray *)dataForTable:(NSString *)t where:(NSString *)w isNot:(NSString *)e;
+{
+    NSString *sql = [NSString stringWithFormat:@"SELECT * FROM %@ WHERE %@ != '%@'", t, w, e];
+	DLog(@"%@",sql);
+	return [[SQLiteAccess sql] selectManyRowsWithSQL:sql];
+}
+
 - (NSArray *)dataForColumn:(NSString *)theColumn inTable:(NSString *)theTable; {
     NSString *sql = [NSString stringWithFormat:@"SELECT '%@' FROM %@", theColumn, theTable];
 	return [[SQLiteAccess sql] selectManyRowsWithSQL:sql];
