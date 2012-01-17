@@ -1,12 +1,12 @@
 //
 //  CCData.m
 //
-//  Created by James on 3/20/10.
+//  Created by James J. Womack on 3/20/10.
 //  Copyright 2010-2011 Cirrostratus Design Company. All rights reserved.
 //
 
 #import "CCData.h"
-#import "SQLiteAccess.h"
+
 #import <Foundation/Foundation.h> 
 
 @implementation CCData
@@ -14,52 +14,57 @@
 
 - (NSArray *)searchResultsForTable:(NSString *)theTable column:(NSString *)theColumn term:(NSString *)theTerm {	
     NSMutableArray *ma = [[[NSMutableArray alloc] init] autorelease];
-    ILog();
-    NSMutableString *sql1 = [[[NSMutableString alloc] initWithFormat:@"SELECT * FROM %@ WHERE ", theTable] autorelease];
-    ILog();
-    [sql1 appendFormat:@"`%@` LIKE '%%%@%%' ", theColumn, theTerm];
-    ILog();
-    NSArray *a1 = [[SQLiteAccess sql] selectManyRowsWithSQL:[NSString stringWithString:sql1]];
-    ILog();
-    if (a1) {
-        ILog();
-        [ma addObjectsFromArray:a1];
-    }
-    ILog();
+
+    NSMutableString *sql1 = [[[NSMutableString alloc] init] autorelease];
+
     [sql1 setString:[NSString stringWithFormat:@"SELECT * FROM %@ WHERE ", theTable]];
-    ILog();
+
     BOOL ran = FALSE;
     NSArray *a = [theTerm componentsSeparatedByString:@" "];
-    ILog();
+
     for (NSString *s in a) {
         if ([s length] > 2) {
-            ILog();
+
             if(ran)[sql1 appendString:@"OR "];
-            ILog();
+
             [sql1 appendFormat:@"`%@` LIKE '%%%@%%' ", theColumn, s];
-            ILog();
+
             if (([s length] > 2)) {
-                ILog();
+
                 if ([[s substringFromIndex:[s length]-1] isEqualToString:@"s"]) {
-                    ILog();
+
                     [sql1 appendFormat:@"OR `%@` LIKE '%%%@%%' ", theColumn, [s substringToIndex:[s length] - 1]];
                 }
-                ILog();
+
             }
             ran = YES;
-            ILog();
+
         }
     }	
-    ILog();
     NSArray *a2 = [[SQLiteAccess sql] selectManyRowsWithSQL:[NSString stringWithString:sql1]];
-    ILog();
     if (a2) {
-        ILog();
+
         [ma addObjectsFromArray:a2];
     }
-    ILog();
+    NSArray *f = [ma filteredArrayUsingPredicate:[NSPredicate predicateWithFormat:@"%K = %@", theColumn, theTerm]];
+
+    NSDictionary *d = nil;
+    if (f) {
+        if ([f count]) {
+            d = [f objectAtIndex:0];
+
+            if ([ma containsObject:d]) {
+
+                NSUInteger index = [ma indexOfObject:d];
+                [ma exchangeObjectAtIndex:0 withObjectAtIndex:index];
+            }
+
+        }
+    }
+    
     return [NSArray arrayWithArray:ma];
 }
+
 - (NSArray *)searchResultsForTerm:(NSString *)s {	
 	return [self searchResultsForTable:@"documents" column:@"body" term:s];
 }
@@ -77,7 +82,7 @@
 
 - (NSArray *)dataForTable:(NSString *)t where:(NSString *)w equals:(NSString *)e {
 	NSString *sql = [NSString stringWithFormat:@"SELECT * FROM %@ WHERE %@ = '%@'", t, w, e];
-	ILogPlus(@"%@",sql);
+
 	return [[SQLiteAccess sql] selectManyRowsWithSQL:sql];
 }
 
@@ -114,7 +119,6 @@
 		return [self dataForTable:t where:w equals:e];
 	}
 	NSString *sql = [NSString stringWithFormat:@"SELECT * FROM %@ WHERE %@ = %i", t, w, [e intValue]];
-	DLog(@"%@",sql);
 	if (limit) {
 		return [[SQLiteAccess sql] selectOneRowWithSQL:sql];
 	}
@@ -124,7 +128,6 @@
 
 - (NSArray *)dataForTable:(NSString *)t where:(NSString *)w matches:(NSString *)e {
 	NSString *sql = [NSString stringWithFormat:@"SELECT * FROM %@ WHERE %@ MATCH '%@'", t, w, e];
-	DLog(@"%@",sql);
 	return [[SQLiteAccess sql] selectManyRowsWithSQL:sql];
 }
 
@@ -134,7 +137,6 @@
 		return [self dataForTable:t where:w equals:e];
 	}
 	NSString *sql = [NSString stringWithFormat:@"SELECT * FROM %@ WHERE %@ = %i", t, w, [e intValue]];
-	DLog(@"%@",sql);
 	return [[SQLiteAccess sql] selectManyRowsWithSQL:sql];
 }
 
@@ -153,7 +155,6 @@
 }
 
 - (NSNumber *)insertRow:(NSDictionary *)r inTable:(NSString *)t {
-	DLog(@"insertRow");
 	NSMutableString *mutable_sql = [[[NSMutableString alloc] initWithString:@""] autorelease];
 	[mutable_sql appendString:[NSString stringWithFormat:@"INSERT INTO %@ (",t]];
 	for (id theKey in r){

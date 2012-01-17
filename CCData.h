@@ -1,11 +1,13 @@
 //
 //  CCData.h
 //
-//  Created by James on 3/20/10.
+//  Created by James J. Womack on 3/20/10.
 //  Copyright 2010-2011 Cirrostratus Design Company. All rights reserved.
 //
 
 #import <Foundation/Foundation.h>
+#import "SQLiteAccess.h"
+
 
 
 @interface CCData : NSObject

@@ -16,6 +16,7 @@
 
 @synthesize dbName = _dbName;
 @synthesize dbExt = _dbExt;
+@synthesize dbDir = _dbDir;
 
 
 static SQLiteAccess *_sql; // self
@@ -97,7 +98,12 @@ static int multipleRowCallback(void *queryValuesVP, int columnCount, char **valu
     NSString *path = nil;
     NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
     NSString *appSupportDir = [paths objectAtIndex:0];
-    NSString *dbNameDir = [NSString stringWithFormat:@"%@/sql", appSupportDir];
+    NSString *dbNameDir = nil;
+    if ([_dbDir length]) {
+        dbNameDir = [NSString stringWithFormat:@"%@/%@", appSupportDir, _dbDir];
+    }else {
+        dbNameDir = [NSString stringWithFormat:@"%@/sql", appSupportDir];
+    }
     NSFileManager *fileManager = [NSFileManager defaultManager];
     BOOL isDir = NO;
     BOOL dirExists = [fileManager fileExistsAtPath:dbNameDir isDirectory:&isDir];
@@ -136,7 +142,7 @@ static int multipleRowCallback(void *queryValuesVP, int columnCount, char **valu
 - (void)mergeMainDatabaseWithDatabase:(NSString *)databasePath; {
     BOOL dbExists = [[NSFileManager defaultManager] fileExistsAtPath:databasePath];
 	if (!dbExists) {
-		ILogPlus(@"This database doesn't exist");
+
 		return;
 	}else {
         [self executeSQL:[NSString stringWithFormat:@"ATTACH '%@' AS dbldb",databasePath] withCallback:NULL context:nil];
@@ -211,66 +217,15 @@ static int multipleRowCallback(void *queryValuesVP, int columnCount, char **valu
     return values;
 }
 
-- (void)merge2 {
-    NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
-    NSString *dataDir = [[paths objectAtIndex:0] stringByAppendingPathComponent:@"data"];
-    NSString *sqlDir = [[paths objectAtIndex:0] stringByAppendingPathComponent:@"sql"];
-    const char *oldDBPath = [[dataDir stringByAppendingPathComponent:@"vitamate.db"] UTF8String];
-    const char *mainDBPath = [[sqlDir stringByAppendingPathComponent:@"vitamate.db"] UTF8String];
-    sqlite3 *mainDB;
-    if (sqlite3_open(mainDBPath, &mainDB) == SQLITE_OK) {
-        NSString *attachSQL = [NSString stringWithFormat: @"ATTACH DATABASE \'%s\' AS old_db", oldDBPath];
-        char *errorMessage;
-        if (sqlite3_exec(mainDB, [attachSQL UTF8String], NULL, NULL, &errorMessage) == SQLITE_OK) {
-            sqlite3_stmt *selectStmt;
-                        
-            NSString *selectSQL = @"insert into main.favorites select * from old_db.favorites";
-            if (sqlite3_prepare_v2(mainDB, [selectSQL UTF8String] , -1, &selectStmt, nil) == SQLITE_OK) {
-                while (sqlite3_step(selectStmt) == SQLITE_ROW) {
-                    //do something
-                }
-            }
-            else {
-                NSLog(@"Error while creating select statement: '%s'", sqlite3_errmsg(mainDB));
-            }
-            
-            selectSQL = @"insert into main.meals select * from old_db.meals";
-            if (sqlite3_prepare_v2(mainDB, [selectSQL UTF8String] , -1, &selectStmt, nil) == SQLITE_OK) {
-                while (sqlite3_step(selectStmt) == SQLITE_ROW) {
-                    //do something
-                }
-            }
-            else {
-                NSLog(@"Error while creating select statement: '%s'", sqlite3_errmsg(mainDB));
-            }
-            
-            selectSQL = @"insert or ignore into main.usda select * from old_db.usda";
-            if (sqlite3_prepare_v2(mainDB, [selectSQL UTF8String] , -1, &selectStmt, nil) == SQLITE_OK) {
-                while (sqlite3_step(selectStmt) == SQLITE_ROW) {
-                    //do something
-                }
-            }
-            else {
-                NSLog(@"Error while creating select statement: '%s'", sqlite3_errmsg(mainDB));
-            }
-        }
-        else {
-            NSLog(@"Error while attaching databases: '%s'", errorMessage);
-        }
-    }
-    else {
-        NSLog(@"Failed to open database at %@ with error %s", mainDBPath, sqlite3_errmsg(mainDB));
-        sqlite3_close(mainDB);
-    }
-}
 
 - (void)createFTS; {
 	NSString *sql = @"CREATE VIRTUAL TABLE fts_documents using FTS3(id, title, category, body);";
 	[self executeSQL:sql withCallback:NULL context:nil];
 }
 
-
-
+- (void)addColumn:(NSString *)c toTable:(NSString *)t; {
+	[self executeSQL:String(@"ALTER TABLE %@ ADD COLUMN %@ TEXT",t,c) withCallback:nil context:nil];
+}
 
 - (NSDictionary *)selectOneRowWithSQL:(NSString *)sql {
     NSMutableDictionary *queryValues = [[[NSMutableDictionary alloc] init] autorelease];
@@ -334,5 +289,11 @@ static int multipleRowCallback(void *queryValuesVP, int columnCount, char **valu
 	NSLog(@"deleteWithSQL");
     [self executeSQL:sql withCallback:NULL context:nil];
 }
+
+- (void) truncateTable:(NSString *)tableName {
+	NSString *query = [NSString stringWithFormat:@"DELETE FROM  %@;", tableName];
+	[self executeSQL:query withCallback:NULL context:nil];
+}
+
 
 @end
